@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import * as THREE from "three";
 
-export type CameraMode = "orbit" | "ride";
+export type CameraMode = "orbit" | "ride" | "rear" | "side" | "top";
 
 interface GameState {
   // Track Data
@@ -13,6 +13,8 @@ interface GameState {
   progress: number;
   cameraMode: CameraMode;
   coachCount: number;
+  isNight: boolean;
+  showSpeedometer: boolean;
 
   // Actions
   addPoint: (point: THREE.Vector3) => void;
@@ -24,6 +26,8 @@ interface GameState {
   setProgress: (progress: number) => void;
   setCameraMode: (mode: CameraMode) => void;
   setCoachCount: (count: number) => void;
+  toggleNight: () => void;
+  toggleSpeedometer: () => void;
 }
 
 const INITIAL_POINTS = [
@@ -55,6 +59,8 @@ export const useGameStore = create<GameState>((set) => ({
   progress: 0,
   cameraMode: "orbit",
   coachCount: 3,
+  isNight: false,
+  showSpeedometer: true,
 
   addPoint: (point) =>
     set((state) => ({ trackPoints: [...state.trackPoints, point] })),
@@ -86,4 +92,8 @@ export const useGameStore = create<GameState>((set) => ({
   setCameraMode: (mode) => set({ cameraMode: mode }),
 
   setCoachCount: (count) => set({ coachCount: Math.max(0, Math.min(5, count)) }),
+
+  toggleNight: () => set((state) => ({ isNight: !state.isNight })),
+
+  toggleSpeedometer: () => set((state) => ({ showSpeedometer: !state.showSpeedometer })),
 }));

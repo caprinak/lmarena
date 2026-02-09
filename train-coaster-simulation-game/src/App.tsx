@@ -14,13 +14,18 @@ function App() {
     setSpeed,
     coachCount,
     setCoachCount,
+    cameraMode,
+    setCameraMode,
+    isNight,
+    toggleNight,
+    showSpeedometer,
+    toggleSpeedometer,
   } = useGameStore();
 
   const handleAddPoint = () => {
     let newPoint: THREE.Vector3;
     if (trackPoints.length > 0) {
       const last = trackPoints[trackPoints.length - 1];
-      // Add point extending forward with some randomness/noise to make it interesting
       newPoint = new THREE.Vector3(
         last.x + 5,
         Math.max(2, last.y + (Math.random() - 0.5) * 5),
@@ -32,14 +37,38 @@ function App() {
     addPoint(newPoint);
   };
 
+  const cameraModes = [
+    { id: "ride", label: "🎢 Ride", icon: "🎢" },
+    { id: "rear", label: "🚂 Rear", icon: "🚂" },
+    { id: "side", label: "📐 Side", icon: "📐" },
+    { id: "top", label: "⬆️ Top", icon: "⬆️" },
+    { id: "orbit", label: "🪐 Orbit", icon: "🪐" },
+  ];
+
+  const currentSpeed = Math.round(speed * 100000);
+
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-slate-900">
-      {/* 3D Scene */}
+    <div className={`relative w-screen h-screen overflow-hidden ${isNight ? "bg-slate-900" : "bg-sky-100"}`}>
       <div className="absolute inset-0 z-0">
         <Scene />
       </div>
 
-      {/* UI Overlay */}
+      {showSpeedometer && isPlaying && (
+        <div className="absolute bottom-32 right-8 z-20 bg-slate-900/90 backdrop-blur-md border border-slate-700/50 p-4 rounded-2xl shadow-2xl pointer-events-none">
+          <div className="text-center">
+            <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Speed</div>
+            <div className="text-3xl font-mono font-bold text-emerald-400">{currentSpeed}</div>
+            <div className="text-xs text-slate-500">km/h</div>
+          </div>
+          <div className="mt-2 w-32 h-2 bg-slate-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-emerald-400 to-blue-500 transition-all duration-300"
+              style={{ width: `${Math.min(100, (currentSpeed / 200) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="absolute top-0 left-0 z-10 p-6 pointer-events-none">
         <div className="bg-slate-900/80 backdrop-blur-md border border-slate-700/50 p-6 rounded-2xl shadow-2xl pointer-events-auto max-w-sm">
           <h1 className="text-2xl font-bold text-white mb-1 tracking-tight">
@@ -50,7 +79,6 @@ function App() {
           </p>
 
           <div className="space-y-4">
-            {/* Play/Pause Button */}
             <button
               onClick={togglePlay}
               className={`w-full py-3 px-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
@@ -77,7 +105,6 @@ function App() {
               )}
             </button>
 
-            {/* Speed Control */}
             <div className="space-y-2">
               <div className="flex justify-between text-sm text-slate-300">
                 <span>Train Speed</span>
@@ -95,7 +122,6 @@ function App() {
               />
             </div>
 
-            {/* Coach Count Control */}
             <div className="space-y-2">
               <div className="flex justify-between text-sm text-slate-300">
                 <span>Coaches</span>
@@ -119,10 +145,51 @@ function App() {
               </div>
             </div>
 
-            {/* Divider */}
+            <div className="space-y-2">
+              <div className="text-sm text-slate-300">Camera View</div>
+              <div className="grid grid-cols-5 gap-1">
+                {cameraModes.map((mode) => (
+                  <button
+                    key={mode.id}
+                    onClick={() => setCameraMode(mode.id as any)}
+                    className={`py-2 px-1 rounded-lg font-medium text-xs transition-colors ${
+                      cameraMode === mode.id
+                        ? "bg-indigo-500 text-white"
+                        : "bg-slate-700 hover:bg-slate-600 text-slate-300"
+                    }`}
+                    title={mode.label}
+                  >
+                    {mode.icon}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={toggleNight}
+                className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm transition-colors ${
+                  isNight
+                    ? "bg-indigo-500 text-white"
+                    : "bg-slate-700 hover:bg-slate-600 text-slate-300"
+                }`}
+              >
+                {isNight ? "🌙 Night" : "☀️ Day"}
+              </button>
+              <button
+                onClick={toggleSpeedometer}
+                className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm transition-colors ${
+                  showSpeedometer
+                    ? "bg-emerald-500 text-white"
+                    : "bg-slate-700 hover:bg-slate-600 text-slate-300"
+                }`}
+              >
+                {showSpeedometer ? "📊 Hide" : "📊 Show"} Speed
+              </button>
+            </div>
+
             <div className="h-px bg-slate-700/50 my-4" />
 
-            {/* Track Building Tools */}
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={handleAddPoint}
@@ -149,7 +216,6 @@ function App() {
             </button>
           </div>
 
-          {/* Stats */}
           <div className="mt-6 pt-4 border-t border-slate-700/50 grid grid-cols-3 gap-4">
             <div>
               <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Points</div>
@@ -169,11 +235,10 @@ function App() {
         </div>
       </div>
 
-      {/* Instructions Toast */}
       {!isPlaying && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white px-6 py-3 rounded-full border border-slate-700 shadow-xl backdrop-blur-sm pointer-events-none">
           <p className="text-sm font-medium">
-            🖱️ Add Points to extend track • 🚂 +/- for coaches • 🎢 Start Ride to test • 🏊 Track goes through lake!
+            🎥 5 Camera Views! • 🏗️ Bridges & Tunnels • 🏊 Lake • 🚂 Multi-Coach Train • ☀️/🌙 Day-Night
           </p>
         </div>
       )}
@@ -182,4 +247,3 @@ function App() {
 }
 
 export default App;
-

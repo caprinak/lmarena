@@ -1,4 +1,4 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useGameStore } from "../store/gameStore";
@@ -9,6 +9,7 @@ export function Train() {
   const trainRef = useRef<THREE.Group>(null);
   const coachRefs = useRef<(THREE.Group | null)[]>([]);
   const camera = useThree((state) => state.camera);
+  const lastRearCoachRef = useRef<THREE.Group | null>(null);
 
   const curve = useMemo(() => {
     if (trackPoints.length < 2) return null;
@@ -22,6 +23,9 @@ export function Train() {
   useFrame((_, delta) => {
     if (!curve || !trainRef.current) return;
 
+    const COACH_SPACING = 0.04;
+    const lastCoachIndex = coachCount - 1;
+
     if (isPlaying) {
       const newProgress = (progress + speed * delta * 60) % 1;
       setProgress(newProgress);
@@ -33,8 +37,6 @@ export function Train() {
       const lookAtPos = curve.getPointAt((newProgress + 0.01) % 1);
       trainRef.current.lookAt(lookAtPos);
 
-      const COACH_SPACING = 0.04;
-
       coachRefs.current.forEach((coach, index) => {
         if (!coach) return;
         const coachProgress = (newProgress - (index + 1) * COACH_SPACING + 1) % 1;
@@ -42,13 +44,41 @@ export function Train() {
         const coachLookAt = curve.getPointAt((coachProgress + 0.01) % 1);
         coach.position.copy(coachPosition);
         coach.lookAt(coachLookAt);
+
+        if (index === lastCoachIndex) {
+          lastRearCoachRef.current = coach;
+        }
       });
+
+      const targetProgress = newProgress - (lastCoachIndex + 1) * COACH_SPACING + 1;
+      const rearProgress = (targetProgress + 1) % 1;
+      const rearPosition = curve.getPointAt(rearProgress);
+      const rearTangent = curve.getTangentAt(rearProgress).normalize();
 
       if (cameraMode === "ride") {
         const camOffset = tangent.clone().multiplyScalar(-3).add(new THREE.Vector3(0, 2, 0));
         const camPos = position.clone().add(camOffset);
         camera.position.lerp(camPos, 0.1);
         camera.lookAt(position.clone().add(tangent.multiplyScalar(5)));
+      } else if (cameraMode === "rear") {
+        const camOffset = rearTangent.clone().multiplyScalar(4).add(new THREE.Vector3(0, 2, 0));
+        const camPos = rearPosition.clone().add(camOffset);
+        camera.position.lerp(camPos, 0.1);
+
+        const lookAtPoint = position.clone();
+        if (lastRearCoachRef.current) {
+          lookAtPoint.copy(lastRearCoachRef.current.position);
+        }
+        camera.lookAt(lookAtPoint);
+      } else if (cameraMode === "side") {
+        const sideOffset = new THREE.Vector3(0, 3, 0).cross(tangent).normalize().multiplyScalar(8);
+        const camPos = position.clone().add(sideOffset);
+        camera.position.lerp(camPos, 0.05);
+        camera.lookAt(position.clone().add(new THREE.Vector3(0, 5, 0)));
+      } else if (cameraMode === "top") {
+        const camPos = position.clone().add(new THREE.Vector3(0, 20, 0));
+        camera.position.lerp(camPos, 0.05);
+        camera.lookAt(position);
       }
     } else {
       if (progress === 0 && trainRef.current) {
@@ -57,7 +87,6 @@ export function Train() {
         trainRef.current.position.copy(startPos);
         trainRef.current.lookAt(nextPos);
 
-        const COACH_SPACING = 0.04;
         coachRefs.current.forEach((coach, index) => {
           if (!coach) return;
           const coachProgress = (0 - (index + 1) * COACH_SPACING + 1) % 1;
