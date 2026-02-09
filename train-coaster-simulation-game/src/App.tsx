@@ -12,6 +12,8 @@ function App() {
     trackPoints,
     speed,
     setSpeed,
+    coachCount,
+    setCoachCount,
   } = useGameStore();
 
   const handleAddPoint = () => {
@@ -93,6 +95,30 @@ function App() {
               />
             </div>
 
+            {/* Coach Count Control */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-slate-300">
+                <span>Coaches</span>
+                <span>{coachCount}</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCoachCount(coachCount - 1)}
+                  disabled={coachCount <= 0}
+                  className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+                >
+                  -
+                </button>
+                <button
+                  onClick={() => setCoachCount(coachCount + 1)}
+                  disabled={coachCount >= 5}
+                  className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
             {/* Divider */}
             <div className="h-px bg-slate-700/50 my-4" />
 
@@ -124,10 +150,14 @@ function App() {
           </div>
 
           {/* Stats */}
-          <div className="mt-6 pt-4 border-t border-slate-700/50 grid grid-cols-2 gap-4">
+          <div className="mt-6 pt-4 border-t border-slate-700/50 grid grid-cols-3 gap-4">
             <div>
-              <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Track Points</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Points</div>
               <div className="text-xl font-mono text-slate-200">{trackPoints.length}</div>
+            </div>
+            <div>
+              <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Coaches</div>
+              <div className="text-xl font-mono text-slate-200">{coachCount}</div>
             </div>
             <div>
               <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Status</div>
@@ -143,7 +173,7 @@ function App() {
       {!isPlaying && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white px-6 py-3 rounded-full border border-slate-700 shadow-xl backdrop-blur-sm pointer-events-none">
           <p className="text-sm font-medium">
-            🖱️ Click "Add Point" to extend track • 🎢 Click "Start Ride" to test
+            🖱️ Add Points to extend track • 🚂 +/- for coaches • 🎢 Start Ride to test • 🏊 Track goes through lake!
           </p>
         </div>
       )}
